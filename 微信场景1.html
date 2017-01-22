@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=640,user-scalable=no,target-densityDpi=device-dpi">
+		<style>
+			*{margin:0;padding:0}
+			html{width:100%;}
+			ul li{list-style:none}
+			#main{position:relative;left:0;top:0;overflow: hidden;}
+			#list >li{position:absolute;width:100%;height:100%;left:0;top:0;background-repeat:no-repeat;
+			background-size:cover;display:none;}
+			#list >li.zIndex{z-index:5}
+			#canvas{position:absolute;left:0;top:0;width:100%;height:100%;z-index:10}
+			#list >li:nth-of-type(1){background-image:url('img/b.png');display:block}
+			#list >li:nth-of-type(2){background-image:url('img/c.png')}
+			#list >li:nth-of-type(3){background-image:url('img/d.png')}
+			#list >li:nth-of-type(4){background-image:url('img/e.png')}
+			#list >li:nth-of-type(5){background-image:url('img/ad1.png')}
+			#list >li:nth-of-type(6){background-image:url('img/ad2.png')}
+			#list >li:nth-of-type(7){background-image:url('img/ad3.png')}
+			#list >li:nth-of-type(8){background-image:url('img/ad4.png')}
+			#arrow{width:90px;height:52px;background:url('img/arr.png') no-repeat;position:absolute;
+				-webkit-animation:1s infinite arrowTop;bottom:20px;left:50%;margin-left:-45px;
+			}
+			/*每个li上文字或者图片样式*/
+			/*图片上的文字需要按百分比来布局，因为图片被拉伸，所以固定布局设备宽高都不一样*/
+			#list .li1child{font-size:30px;color:#fff;position:absolute;left:20%;top:50%;}
+			#list .li2child li{width:90px;height:90px;position:absolute}
+			
+			#list .li2child li:nth-of-type(1){background:url(img/c1.png);left:43%;top:30%}
+			#list .li2child li:nth-of-type(2){background:url(img/c2.png);left:13%;top:40%}
+			#list .li2child li:nth-of-type(3){background:url(img/c3.png);left:73%;top:40%}
+			#list .li2child li:nth-of-type(4){background:url(img/c4.png);left:13%;top:65%}
+			#list .li2child li:nth-of-type(5){background:url(img/c5.png);left:73%;top:65%}
+			#list .li2child li:nth-of-type(6){background:url(img/c6.png);left:43%;top:75%}
+			#list .li2child li.active{left:43%;top:75%}
+			#list .li3child{width:460px;height:222px;background:url(img/d1.png) no-repeat;
+			position:absolute;left:50%;margin-left:-230px;top:60%}
+			#list .li4child li{font-size:22px;color:white;border:1px solid #fff;box-shadow:0 0 15px #fff;
+			border-radius:5px;word-wrap:break-word;position:absolute}
+			#list .li4child li:nth-of-type(1){width:220px;height:240px;left:4%;top:15%}
+			#list .li4child li:nth-of-type(2){width:280px;height:150px;left:50%;top:19%}
+			#list .li4child li:nth-of-type(3){width:110px;height:280px;left:78%;top:40%}
+			#list .li4child li.active{width:0;height:0;}
+			#music{width:47px;height:47px;background:url(img/music.png) no-repeat;
+			position:absolute;right:10px;top:10px;z-index:7;background-size:cover;}
+			#music.active{-webkit-animation:rMusic 1s infinite ;}
+            @-webkit-keyframes arrowTop{
+				0%{opacity:0;-webkit-transform:translate(0,-20px);}
+				60%{opacity:1;-webkit-transform:translate(0,10px);}
+				100%{opacity:0;-webkit-transform:translate(0,30px);}
+			}
+			@-webkit-keyframes rMusic{
+				0%{-webkit-transform:rotate(0deg);}
+				100%{-webkit-transform:rotate(360deg);}
+			}
+			#loading{width:100%;height:100%;background:white;position:absolute;left:0;
+			z-index:50;}
+			#loading ul{position:absolute;left:50%;margin-left:-30px;text-align:center;
+				top:50%;margin-top:-15px;}
+			#loading .text{position:absolute;width:100%;top:40%;text-align:center;font-size:20px;
+				color:greenyellow;}
+			#loading ul li{width:5px;height:40px;background:greenyellow;float:left;
+				margin-right:10px;-webkit-animation:2s infinite loading linear;animation:2s infinite loading linear;}
+			@-webkit-keyframes loading{
+				0%{-webkit-transform:scaleY(1)}
+                50%{-webkit-transform:scaleY(0.1)}
+				100%{-webkit-transform:scaleY(1)}
+			}
+			/*在时间前加上负号是提前执行，而不是延迟执行*/
+			#loading ul li:nth-of-type(1){-webkit-animation-delay:0s}
+			#loading ul li:nth-of-type(2){-webkit-animation-delay:-0.2s}
+			#loading ul li:nth-of-type(3){-webkit-animation-delay:-0.4s}
+			#loading ul li:nth-of-type(4){-webkit-animation-delay:-0.6s}
+			#loading ul li:nth-of-type(5){-webkit-animation-delay:-0.8s}
+			#loading ul li:nth-of-type(6){-webkit-animation-delay:-1s}
+		</style>
+		<script src="jquery.js" ></script>
+		<script>
+			$(function(){
+				var $main = $('#main');
+				var $lis = $('#list>li');
+				var deviceH = $(document).height();
+				var cans = $('#canvas');
+				//动态设置外层高度
+				$('#main').css('height',deviceH);
+				//slideCanvas();
+				slideImg();
+				showLoading();
+				function slideCanvas(){
+					var img = new Image();
+					var cvs = cans.get(0);
+					var ctx = cvs.getContext('2d');
+					var startX = 0;
+					var startY = 0;
+					
+				   cans.attr('height',deviceH);
+					img.src='img/a.png';
+					
+				   img.onload = function(){
+				   	    //绘制图像，img，position，width，height
+						ctx.drawImage(img,(640-overWidth())/2,0,overWidth(),deviceH);
+						//绘制线条的宽度
+						ctx.lineWidth = 300;
+						//线条连接处为圆形
+						ctx.lineCap='round';
+						//后面绘制的图片与之前的图形重叠的部分隐藏，后面的图形消失
+						ctx.globalCompositeOperation ='destination-out';
+						//手指按下触摸
+						cans.on('touchstart.move',function(e){
+							e.preventDefault();
+							var touch = e.originalEvent.changedTouches[0];
+						   startY = touch.pageY-$(this).offset().top;
+						   startX = touch.pageX-$(this).offset().left;
+						   ctx.beginPath();
+						   ctx.moveTo(startX,startY);
+							//手指移动
+							function moveFn(e){
+								var touch = e.originalEvent.changedTouches[0];
+								var x = touch.pageX-$(this).offset().left;
+								var y = touch.pageY-$(this).offset().top;
+								ctx.lineTo(x,y);
+								ctx.stroke();
+								ctx.beginPath();
+								ctx.moveTo(x,y);
+							};
+							//手指移开
+							function endFn(e){
+								var touch = e.originalEvent.changedTouches[0];
+								var x = touch.pageX-$(this).offset().left;
+								var y = touch.pageY-$(this).offset().top;
+								
+							    
+							    ctx.lineTo(x,y);
+								ctx.stroke();
+								
+							//获取canvas上从(x,y)点开始,宽为width、高为height的图片区域的像素数据
+							var imgDate = ctx.getImageData(0,0,640,deviceH);
+							//获取所有像素点
+							var allPx = imgDate.width * imgDate.height;
+							var num = 0;
+							//循环取出所有的透明度为0的像素点
+							for(var i=0;i<allPx;i++){
+								if(imgDate.data[4*i+3]==0){
+									num++;
+								}
+							};
+							//判断透明度为0的像素是否超过一半，超过了则设置canvas透明度为0，添加缓冲动画
+							if(num>allPx/2){
+								cans.animate({'opacity':0},1000,function(){
+									$(this).remove();
+									//刮开之后调用第一个入场动画
+									AnimateFn[0].inAn();
+									//刮开之后trigger touchstart事件
+									showMusic();
+								});
+								
+							}
+								//手指抬起的时候取消监听手指移动和手指移开事件
+								cans.off('touchmove',moveFn);
+							    cans.off('touchend',endFn);
+							};
+							//监听手指移动和手指移开事件
+							cans.on('touchmove',moveFn);
+							cans.on('touchend',endFn);
+						})
+						
+				 }
+					
+				};
+
+
+				function slideImg(){
+					var startImgY;
+					var nowIndex = 0;
+					var nextPreIndex = 0;
+					var step = 1/4;
+					var scaleN = 0;
+					var oBtn = true;
+					//图片被设备放大后让被拉伸的长度向左偏移，使图片居中
+					$lis.css('backgroundPosition',(640-overWidth())/2+'px 0');
+					$lis.on('touchstart',function(e){
+						//避免连续触发动画造成bug
+						if(oBtn){
+							oBtn = false;
+							var touch = e.originalEvent.changedTouches[0];
+							startImgY = touch.pageY;
+							nowIndex = $(this).index();
+
+							$lis.on('touchmove.move',function(e){
+								var touch = e.originalEvent.changedTouches[0];
+								var disY = touch.pageY - startImgY;
+								$(this).siblings().hide();
+								if(disY<0){
+									//判断下一张图片是否为最后一张，如果是，就设置为第一张
+									nextPreIndex = nowIndex == $lis.length-1 ? 0 : nowIndex+1;
+									//改变下一张图片的初始位置，原本的初始位置为0
+									$lis.eq(nextPreIndex).css('transform','translate(0,'+(deviceH+disY)+'px)');
+
+								}else{
+									nextPreIndex = nowIndex == 0 ? $lis.length-1 : nowIndex-1;
+									$lis.eq(nextPreIndex).css('transform','translate(0,'+(-deviceH+disY)+'px)');
+								}
+								//设置下一张的index值始终高于当前图片
+								$lis.eq(nextPreIndex).show().addClass('zIndex').siblings().removeClass('zIndex');
+								//设置缩放值，范围是0-1之间，数值变化由大到小，并且保证值的变化不会太大
+								scaleN = 1-Math.abs(disY*step/deviceH);
+								//拖动当前的图片减慢速度，所以乘以一个基数
+								$(this).css('transform','translate(0,'+disY*step+'px) scale('+scaleN+')');
+							});
+							$lis.on('touchend.move',function(e){
+								var touch = e.originalEvent.changedTouches[0];
+								var disEndY = touch.pageY-startImgY;
+								if(disEndY<0){
+									$lis.eq(nowIndex).css('transform','translate(0,'+(-deviceH*step)+'px) scale('+(1-step)+')');
+								}else{
+									$lis.eq(nowIndex).css('transform','translate(0,'+(deviceH*step)+'px) scale('+(1-step)+')');
+								}
+								$lis.eq(nowIndex).css('transition','.3s');
+								$lis.eq(nextPreIndex).css('transform','translate(0,0)');
+								$lis.eq(nextPreIndex).css('transition','.3s');
+								$lis.off('.move');
+
+							})
+						}
+
+					});
+					//css3运动结束触发该事件
+					$lis.on('transitionEnd webkitTransitionEnd',function(ev){
+						if(!$lis.is(ev.target)){
+							return;
+						};
+						resetFn();
+						//当前页面nowIndex退场，nextpreUIndex下一个页面或者上一个页面进场
+						if(AnimateFn[nowIndex]){
+							AnimateFn[nowIndex].outAn();
+						}
+						if(AnimateFn[nextPreIndex]){
+							AnimateFn[nextPreIndex].inAn();
+						}
+						
+					});
+
+					//动画结束后重新启动动画
+					function resetFn(){
+						$lis.css('transform','');
+						$lis.css('transition','');
+                        $lis.eq(nextPreIndex).removeClass('zIndex').siblings().hide();
+						oBtn = true;
+					}
+
+				};
+				//计算图片在设备上被缩放的宽度
+				function overWidth(){
+					var w = 640*deviceH/960;
+					w = w > 640 ? w : 640;
+					return w;	
+				};
+               //定义每个页面的入场和出场动画
+				var AnimateFn = [
+				{
+					inAn:function(){
+						setTimeout(function(){
+							var $liChild = $lis.eq(0).find('li');
+							$liChild.css('opacity',1);
+							$liChild.filter(':odd').css('transform','translate(0,0)');
+							$liChild.filter(':even').css('transform','translate(0,0)');
+							$liChild.css('transition','1s');
+						},100)
+					},
+					outAn:function(){
+						var $liChild = $lis.eq(0).find('li');
+						$liChild.css('opacity',0);
+						$liChild.css('transition','');
+						$liChild.filter(':odd').css('transform','translate(-200px,0)');
+						$liChild.filter(':even').css('transform','translate(200px,0)');
+					}
+				},
+				{
+					inAn:function(){
+						setTimeout(function(){
+							var $liChild = $lis.eq(1).find('li');
+							$liChild.attr('class','');
+							$liChild.css('transform','rotate(720deg)');
+							$liChild.css('transition','1s')
+						},100)
+						
+					},
+					outAn:function(){
+						var $liChild = $lis.eq(1).find('li');
+						$liChild.attr('class','active');
+						$liChild.css('transition','');
+						$liChild.css('transform','');
+						
+					}
+				},
+				{
+					inAn:function(){
+						setTimeout(function(){
+							
+							var $divChild = $lis.eq(2).find('div');
+							
+							$divChild.css('transform','rotateY(720deg)');
+							$divChild.css('transition','1s');
+						},100)
+						
+					},
+					outAn:function(){
+						
+						   var $divChild = $lis.eq(2).find('div');
+							$divChild.css('transform','');
+							$divChild.css('transition','');
+						}
+				},
+				{
+					inAn:function(){
+						setTimeout(function(){
+							var lichild = $lis.eq(3).find('li');
+							lichild.attr('class','');
+							lichild.css('opacity','1');
+							lichild.css('transition','1s');
+						},100)
+					},
+					outAn:function(){
+						var lichild = $lis.eq(3).find('li');
+							lichild.attr('class','active');
+							lichild.css('opacity','0');
+							lichild.css('transition','');
+					}
+				}
+				
+				];
+				//循环遍历，调用每一个出场的运动
+				$.each(AnimateFn,function(i,obj){
+					obj.outAn();
+				});
+				//音乐播放
+		        showMusic();
+			    function showMusic(){
+			    	var $music = $('#music');
+			    	var $a1 = $('#a1');
+			    	var onff = true;
+			    	$music.on('touchstart',function(){
+			    		console.log(1);
+			    	   if(onff){
+			    	   	   $(this).attr('class','active');
+			    	   	   //调用auto的方法
+			    	   	   $a1.get(0).play();
+			    			
+			    		}else{
+			    			$(this).attr('class','');
+			    			$a1.get(0).pause();
+			    			
+			    		}
+			    		onff = !onff;
+			    	})
+					 //模拟手动触发touchstart
+			    	 $music.trigger('touchstart');
+			    };
+			    //加载动画
+				function showLoading(){
+					var arr = ['a.png','b.png','c.png','d.png','e.png','ad1.png','ad2.png','ad3.png','ad4.png',
+					  'c1.png','c2.png','c3.png'];
+				 var   num = 0;
+				 $.each(arr,function(i,imgSrc){
+				 	var objImg = new Image();
+				 	objImg.src = 'img/'+imgSrc;
+				 	objImg.onload = function(){
+				 		num++;
+				 		if(num==arr.length){
+				 			$('#loading').animate({opacity:0},1000,function(){
+				 				$(this).remove();
+				 			})
+				 		}
+				 	};
+				 	//如果某一张图片出现问题，则继续完成加载动画
+				 	objImg.onerror = function(){
+				 		$('#loading').animate({opacity:0},1000,function(){
+				 			$(this).remove();
+				 		})
+				 	}
+				 })
+                      
+				}
+
+			   
+			})
+		</script>
+	</head>
+	<body>
+		<div id='main'>
+			<!--动画加载-->
+			<div id="loading">
+				<ul>
+					<li></li>
+					<li></li>
+					<li></li>
+					<li></li>
+					<li></li>
+					<li></li>
+				</ul>
+				<div class="text">你的技能是否已经载满</div>
+			</div>
+			<!-- 浏览器客户端不支持canvas中的getImageData，需要在服务端上运行 -->
+			<!-- <canvas id="canvas" width="640" height="960"></canvas> -->
+			<ul id="list">
+				<li>
+					<ul class="li1child">
+						<li>
+							<p>Lorem ipsum dolor sit amet.</p>
+							<p>Lorem ipsum dolor sit amet.</p>
+						</li>
+						<li>
+							<p>Lorem ipsum dolor sit amet.</p>
+							<p>Lorem ipsum dolor sit amet.</p>
+						</li>
+						<li>
+							<p>Lorem ipsum dolor sit amet.</p>
+							<p>Lorem ipsum dolor sit amet.</p>
+						</li>
+					</ul>
+				</li>
+				<li>
+					<ul class="li2child">
+						<li></li>
+						<li></li>
+						<li></li>
+						<li></li>
+						<li></li>
+						<li></li>
+					</ul>
+				</li>
+				<li>
+					<div class="li3child">
+						
+					</div>
+				</li>
+				<li>
+					<ul class="li4child">
+						<li>Lorem ipsum dolor sit amet.</li>
+						<li>Lorem ipsum dolor sit amet.</li>
+						<li>Lorem ipsum dolor sit amet.</li>
+					</ul>
+				</li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+			</ul>
+			<div id="arrow"></div>
+			<div id="music">
+				<!-- autoplay="autoplay"苹果手机不支持，但是在微页面上是支持的-->
+				<audio src="img/music.mp3" id="a1" preload="auto" loop ></audio>
+			</div>
+		</div>
+	</body>
+</html>
